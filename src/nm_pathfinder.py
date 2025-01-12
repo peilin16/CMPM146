@@ -26,6 +26,9 @@ def find_path (source_point, destination_point, mesh):
             destination = i;
         if(start != None and destination != None):
             path, boxes = A_algorithm(start, destination, mesh)
+            if(len(path)>=2):
+                path[0] = source_point;
+                path[len(path) - 1] = destination_point;
             return path, boxes
         
     return [],[] ## not in range
