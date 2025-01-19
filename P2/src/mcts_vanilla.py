@@ -23,7 +23,21 @@ def traverse_nodes(node: MCTSNode, board: Board, state, bot_identity: int):
         state: The state associated with that node
 
     """
-    pass
+    current_num = 0;
+    current_board = board;
+    current_state = state;
+    if node.child_nodes:
+
+        while node.untried_actions != []: 
+            new_node,new_state = expand_leaf(node,current_board,current_state);
+
+    return node, state
+
+
+def getRandomAct(board, state):
+    """ Returns a random move. """
+    return choice(board.legal_actions(state))
+
 
 def expand_leaf(node: MCTSNode, board: Board, state):
     """ Adds a new leaf to the tree by creating a new child node for the given node (if it is non-terminal).
@@ -38,7 +52,18 @@ def expand_leaf(node: MCTSNode, board: Board, state):
         state: The state associated with that node
 
     """
-    pass
+    currentboard = board;
+    ##while node.untried_actions != []:
+    next_action = node.untried_actions.pop();
+    new_state = board.next_state(state,next_action);
+        
+    new_node = MCTSNode(node, next_action ,  board.legal_actions(new_state));
+    node.child_nodes[next_action] = new_node;
+
+    ##board = currentboard
+    return new_node, new_state;
+
+
 
 
 def rollout(board: Board, state):
@@ -52,7 +77,10 @@ def rollout(board: Board, state):
         state: The terminal game state
 
     """
-    pass
+    while not board.is_ended(state):
+        action = choice(board.legal_actions(state))  # Choose a random legal action
+        state = board.next_state(state, action)     # Update the state
+    return state
 
 
 def backpropagate(node: MCTSNode|None, won: bool):
@@ -63,7 +91,11 @@ def backpropagate(node: MCTSNode|None, won: bool):
         won:    An indicator of whether the bot won or lost the game.
 
     """
-    pass
+    
+    while node is not None:
+        node.visits += 1  # Increment visit count
+        ##node.wins += result  # Update wins based on the result
+        node = node.parent  # Move to the parent node
 
 def ucb(node: MCTSNode, is_opponent: bool):
     """ Calcualtes the UCB value for the given node from the perspective of the bot
@@ -74,9 +106,12 @@ def ucb(node: MCTSNode, is_opponent: bool):
     Returns:
         The value of the UCB function for the given node
     """
-    pass
+    exploration_param = 1.414
+    exploitation_term = node.wins / node.visits if node.visits > 0 else 0
+    exploration_term = exploration_param * (sqrt(log(node.parent.visits) / node.visits) if node.visits > 0 else float('inf'))
+    return exploitation_term - exploration_term if is_opponent else exploitation_term + exploration_term
 
-def get_best_action(root_node: MCTSNode):
+def get_best_action(root_node: MCTSNode, board: Board, state):
     """ Selects the best action from the root node in the MCTS tree
 
     Args:
@@ -85,7 +120,27 @@ def get_best_action(root_node: MCTSNode):
         action: The best action from the root node
     
     """
-    pass
+    loop = 0;
+    result = 0;
+    ##def expand_leaf(node: MCTSNode, board: Board, state):
+    while  root_node.untried_actions != []:
+        leaf , _=expand_leaf(root_node,board, state);
+        root_node.child_nodes[leaf.parent_action] = leaf;
+        loop += 1;
+
+    while loop <= 1000:
+        leaf_key = choice(list(root_node.child_nodes.keys()));
+        leaf_choice = root_node.child_nodes[leaf_key]
+        leaf_state = board.next_state(state,leaf_choice.parent_action);
+        traverse_nodes(leaf_choice, board , state, board.current_player(leaf_state));
+        loop += 1;        
+    
+    # Select the child with the maximum visit count
+    best_child = max(root_node.children, key=lambda child: child.visits)
+    
+    # Return the action leading to that child
+    return best_child.action
+
 
 def is_win(board: Board, state, identity_of_bot: int):
     # checks if state is a win state for identity_of_bot
@@ -115,7 +170,7 @@ def think(board: Board, current_state):
 
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
-    best_action = get_best_action(root_node)
+    best_action = get_best_action(root_node , board ,state)
     
     print(f"Action chosen: {best_action}")
     return best_action
