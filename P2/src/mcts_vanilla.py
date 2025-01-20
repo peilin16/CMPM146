@@ -23,13 +23,20 @@ def traverse_nodes(node: MCTSNode, board: Board, state, bot_identity: int):
         state: The state associated with that node
 
     """
-    while not board.is_ended(state) and node.untried_actions == [] and node.child_nodes:
-        # Use UCB to select the best child node
-        node = max(node.child_nodes.values(), key=lambda child: ucb(child, board.current_player(state) != bot_identity))
-        # Update the state as we move down the tree
-        state = board.next_state(state, node.parent_action)
-
-    return node, state
+    best_child =node;
+    currentState = state
+    if node.visits != 0 and len(node.child_nodes) != 0:
+        current =node.wins/ node.visits   
+        for key in node.child_nodes.keys():
+            n = node.child_nodes[key];
+            n_c = n.wins/n.visits
+            if(n_c >= current):
+                current = n_c;
+                best_child = n;
+        currentState = board.next_state(state, best_child.parent_action);
+        best_child = traverse_nodes(best_child,board , currentState, bot_identity);
+        ##currentState = board.next_state(currentState, best_child.parent_action);
+    return best_child, currentState
 
 
 def getRandomAct(board, state):
@@ -124,7 +131,7 @@ def get_best_action(root_node: MCTSNode, board: Board, state):
         leaf_node, leaf_state = traverse_nodes(root_node, board, state, board.current_player(state))
         is_win = False;
 
-        if not board.is_ended(leaf_state) and leaf_node.untried_actions:
+        if not board.is_ended(leaf_state):
             expanded_node, expanded_state = expand_leaf(leaf_node, board, leaf_state)
             leaf_node.child_nodes[expanded_node.parent_action] = expanded_node
             leaf_node = expanded_node
@@ -139,7 +146,7 @@ def get_best_action(root_node: MCTSNode, board: Board, state):
 
         backpropagate(leaf_node, is_win)
 
-    # Choose the best action based on visits
+    
     best_action = max(
         root_node.child_nodes.values(),
         key=lambda child: child.visits
