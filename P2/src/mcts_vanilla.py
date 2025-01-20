@@ -28,7 +28,7 @@ def traverse_nodes(node: MCTSNode, board: Board, state, bot_identity: int):
     
     current_state = state
     ## if end run out
-    if board.is_ended(state) == False and len(node.child_nodes) != 0:
+    if board.is_ended(state) == False and len(node.untried_actions) == 0:
 
         best_node =None;
         best_ucb = -9999999;
@@ -39,7 +39,7 @@ def traverse_nodes(node: MCTSNode, board: Board, state, bot_identity: int):
             is_opponent = True;
             if board.current_player(state) == bot_identity:
                 is_opponent = False;
-            current_ucb = ucb(node, is_opponent)
+            current_ucb = ucb(current_node, is_opponent)
 
             if(current_ucb > best_ucb):
                 best_ucb = current_ucb
@@ -82,6 +82,7 @@ def expand_leaf(node: MCTSNode, board: Board, state):
     next_state = board.next_state(state,next_action);
         
     new_node = MCTSNode(node, next_action ,  board.legal_actions(next_state));
+    new_node.parent = node;
     node.child_nodes[next_action] = new_node;
 
 
@@ -135,11 +136,10 @@ def ucb(node: MCTSNode, is_opponent: bool):
     if node.visits == 0:
         return float('inf');
     win = node.wins/node.visits;
+    exploration_result = explore_faction * sqrt(log(node.parent.visits) / node.visits)
     if is_opponent:
-        win =  win * -1
-
-
-    return win + (explore_faction * sqrt(log(node.parent.visits) / node.visits))
+        return win - exploration_result;
+    return win + exploration_result
 
 def get_best_action(root_node: MCTSNode):
     """ Selects the best action from the root node in the MCTS tree
@@ -151,11 +151,15 @@ def get_best_action(root_node: MCTSNode):
     
     """
     
-    best_visits = -9999999
+    best_rate = -9999999.9
     best_action = None
-    for current_action, current_node in root_node.child_nodes:
-        if current_node.visits > best_visits:
-            best_visits = current_node.visits
+    for current_action in root_node.child_nodes.keys():
+        current_node = root_node.child_nodes[current_action];
+        if current_node.visits == 0:
+            continue
+        rate = 100 * (current_node.wins / current_node.visits);
+        if rate >= best_rate:
+            best_rate = rate
             best_action = current_action
 
     return best_action
@@ -193,7 +197,7 @@ def think(board: Board, current_state):
 
     # Return an action, typically the most frequently used action (from the root) or the action with the best
     # estimated win rate.
-    best_action = get_best_action(root_node , board ,state)
+    best_action = get_best_action(root_node)
     
     print(f"Action chosen: {best_action}")
     return best_action
