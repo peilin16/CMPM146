@@ -28,16 +28,16 @@ def traverse_nodes(node: MCTSNode, board: Board, state, bot_identity: int):
     
     current_state = state
     ## if end run out
-    if board.is_ended(state) == False and len(node.untried_actions) != 0:
+    if board.is_ended(state) == False and len(node.child_nodes) != 0:
 
         best_node =None;
         best_ucb = -9999999;
         best_action = node.parent_action
-        for current_action, current_node in node.child_nodes:
-            
+        for current_action  in node.child_nodes.keys():
+            current_node = node.child_nodes[current_action]
             ## detect the current identify
             is_opponent = True;
-            if board.current_player(bot_identity):
+            if board.current_player(state) == bot_identity:
                 is_opponent = False;
             current_ucb = ucb(node, is_opponent)
 
