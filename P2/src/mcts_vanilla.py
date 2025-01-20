@@ -23,20 +23,36 @@ def traverse_nodes(node: MCTSNode, board: Board, state, bot_identity: int):
         state: The state associated with that node
 
     """
-    best_child =node;
-    currentState = state
-    if node.visits != 0 and len(node.child_nodes) != 0:
-        current =node.wins/ node.visits   
-        for key in node.child_nodes.keys():
-            n = node.child_nodes[key];
-            n_c = n.wins/n.visits
-            if(n_c >= current):
-                current = n_c;
-                best_child = n;
-        currentState = board.next_state(state, best_child.parent_action);
-        best_child = traverse_nodes(best_child,board , currentState, bot_identity);
+    
+
+    
+    current_state = state
+    ## if end run out
+    if board.is_ended(state) == False and len(node.untried_actions) != 0:
+
+        best_node =None;
+        best_ucb = -9999999;
+        best_action = node.parent_action
+        for current_action, current_node in node.child_nodes:
+            
+            ## detect the current identify
+            is_opponent = True;
+            if board.current_player(bot_identity):
+                is_opponent = False;
+            current_ucb = ucb(node, is_opponent)
+
+            if(current_ucb > best_ucb):
+                best_ucb = current_ucb
+                best_node = current_node
+                best_action = current_action
+                
+        if best_node is None:
+            return node, current_state
+
+        current_state = board.next_state(state,best_action);
+        return  traverse_nodes(best_node, board, current_state, bot_identity);
         ##currentState = board.next_state(currentState, best_child.parent_action);
-    return best_child, currentState
+    return node, current_state
 
 
 def getRandomAct(board, state):
@@ -57,15 +73,20 @@ def expand_leaf(node: MCTSNode, board: Board, state):
         state: The state associated with that node
 
     """
-    currentboard = board; 
+    if board.is_ended(state):
+        return node,state
+    
+
+    
     next_action = node.untried_actions.pop();
-    new_state = board.next_state(state,next_action);
+    next_state = board.next_state(state,next_action);
         
-    new_node = MCTSNode(node, next_action ,  board.legal_actions(new_state));
+    new_node = MCTSNode(node, next_action ,  board.legal_actions(next_state));
     node.child_nodes[next_action] = new_node;
 
+
     ##board = currentboard
-    return new_node, new_state;
+    return new_node, next_state;
 
 
 
@@ -111,12 +132,16 @@ def ucb(node: MCTSNode, is_opponent: bool):
     Returns:
         The value of the UCB function for the given node
     """
-    exploration_param = 1.414
-    exploitation_term = node.wins / node.visits if node.visits > 0 else 0
-    exploration_term = exploration_param * (sqrt(log(node.parent.visits) / node.visits) if node.visits > 0 else float('inf'))
-    return exploitation_term - exploration_term if is_opponent else exploitation_term + exploration_term
+    if node.visits == 0:
+        return float('inf');
+    win = node.wins/node.visits;
+    if is_opponent:
+        win =  win * -1
 
-def get_best_action(root_node: MCTSNode, board: Board, state):
+
+    return win + (explore_faction * sqrt(log(node.parent.visits) / node.visits))
+
+def get_best_action(root_node: MCTSNode):
     """ Selects the best action from the root node in the MCTS tree
 
     Args:
@@ -126,31 +151,12 @@ def get_best_action(root_node: MCTSNode, board: Board, state):
     
     """
     
-    for _ in range(1000):  # Perform 1000 iterations
-        # Selection: Traverse the tree to find a promising node
-        leaf_node, leaf_state = traverse_nodes(root_node, board, state, board.current_player(state))
-        is_win = False;
-
-        if not board.is_ended(leaf_state):
-            expanded_node, expanded_state = expand_leaf(leaf_node, board, leaf_state)
-            leaf_node.child_nodes[expanded_node.parent_action] = expanded_node
-            leaf_node = expanded_node
-            leaf_state = expanded_state
-        elif board.is_ended(leaf_state):
-            i =  board.win_values(state)
-
-
-        result = rollout(board, leaf_state)
-        
-        
-
-        backpropagate(leaf_node, is_win)
-
-    
-    best_action = max(
-        root_node.child_nodes.values(),
-        key=lambda child: child.visits
-    ).parent_action
+    best_visits = -9999999
+    best_action = None
+    for current_action, current_node in root_node.child_nodes:
+        if current_node.visits > best_visits:
+            best_visits = current_node.visits
+            best_action = current_action
 
     return best_action
 
@@ -173,11 +179,15 @@ def think(board: Board, current_state):
     """
     bot_identity = board.current_player(current_state) # 1 or 2
     root_node = MCTSNode(parent=None, parent_action=None, action_list=board.legal_actions(current_state))
-
+    
     for _ in range(num_nodes):
         state = current_state
         node = root_node
-
+        node, state =  traverse_nodes(node , board , state, bot_identity );
+        node,state = expand_leaf(node,board,state);
+        result = rollout(board,state);
+        won = is_win(board, result, bot_identity)
+        backpropagate(node, won)
         # Do MCTS - This is all you!
         # ...
 
