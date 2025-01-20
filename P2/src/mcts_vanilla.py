@@ -21,32 +21,7 @@ def traverse_nodes(node: MCTSNode, board: Board, state, bot_identity: int):
     Returns:
         node: A node from which the next stage of the search can proceed.
         state: The state associated with that node
-traver = False;
-    if(board.is_ended(state)):
-        winners = board.win_values( state);
-        
 
-    if(board.is_ended(state) or len(node.child_nodes) == 0):
-        traver = False;
-    else:
-        traver = choice([True,False]);
-
-
-
-    if traver:
-        leaf_key = choice(list(node.child_nodes.keys()));
-        leaf_choice = node.child_nodes[leaf_key];
-        leaf_state = board.next_state(state,leaf_choice.parent_action);
-        traverse_nodes(leaf_choice, board , leaf_state, board.current_player(state));
-    else:
-        new_node,new_state = expand_leaf(node,board,state);
-        node.child_nodes[new_node.parent_action] = new_node;
-        
-    #visit ++
-    node.visits += 1;    
-
-
-    return node, state
     """
     while not board.is_ended(state) and node.untried_actions == [] and node.child_nodes:
         # Use UCB to select the best child node
@@ -75,8 +50,7 @@ def expand_leaf(node: MCTSNode, board: Board, state):
         state: The state associated with that node
 
     """
-    currentboard = board;
-    ##while node.untried_actions != []:
+    currentboard = board; 
     next_action = node.untried_actions.pop();
     new_state = board.next_state(state,next_action);
         
@@ -144,19 +118,26 @@ def get_best_action(root_node: MCTSNode, board: Board, state):
         action: The best action from the root node
     
     """
+    
     for _ in range(1000):  # Perform 1000 iterations
         # Selection: Traverse the tree to find a promising node
         leaf_node, leaf_state = traverse_nodes(root_node, board, state, board.current_player(state))
- 
+        is_win = False;
+
         if not board.is_ended(leaf_state) and leaf_node.untried_actions:
             expanded_node, expanded_state = expand_leaf(leaf_node, board, leaf_state)
             leaf_node.child_nodes[expanded_node.parent_action] = expanded_node
             leaf_node = expanded_node
             leaf_state = expanded_state
- 
+        elif board.is_ended(leaf_state):
+            i =  board.win_values(state)
+
+
         result = rollout(board, leaf_state)
- 
-        backpropagate(leaf_node, result, board.current_player(state))
+        
+        
+
+        backpropagate(leaf_node, is_win)
 
     # Choose the best action based on visits
     best_action = max(
