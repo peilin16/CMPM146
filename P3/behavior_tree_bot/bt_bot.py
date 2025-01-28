@@ -53,12 +53,12 @@ def setup_behavior_tree():
 
     # Spread Strategy
     spread_sequence = Sequence(name="Spread Strategy")
-    neutral_planet_check = Check(if_neutral_planet_available)
-    spread_action = Action(spread_to_weakest_neutral_planet)
+    neutral_planet_check = Check(spread_check)
+    spread_action = Action(spread_to_weakest_planet)
     spread_sequence.child_nodes = [neutral_planet_check, spread_action]
 
     attack_newly_acquired_planets = Sequence(name="attack newly acquired planets")
-    newly_acquired_planets_check = Check(attack_newly_acquired_planets_check)
+    newly_acquired_planets_check = Check(spread_check)
     ##newly_acquired_planets_action = Action(attack_weak_defended_planets)
     attack_newly_acquired_planets.child_nodes = [newly_acquired_planets_check, attack_action]
 
@@ -67,12 +67,12 @@ def setup_behavior_tree():
 
     # Attach Strategies to Root Selector
     root.child_nodes = [
+        spread_sequence,
         defensive_plan,
         offensive_plan_for_natural,
         fleet_reinforcements_offensive,
         attack_newly_acquired_planets,
         offensive_plan,
-        spread_sequence,
         fallback_attack,
     ]
 
