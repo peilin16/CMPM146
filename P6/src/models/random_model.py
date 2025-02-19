@@ -24,7 +24,7 @@ class RandomModel(Model):
  
         base_model = models.Model(inputs=base_model.input, outputs=base_model.layers[-2].output)
  
-        self._randomize_layers(base_model)
+        self._randomize_layers(base_model) #对每一层采用随机分配
  
         for layer in base_model.layers:
             layer.trainable = False
@@ -47,7 +47,7 @@ class RandomModel(Model):
             optimizer=adam_v2.Adam(learning_rate=0.0005),  # Lower LR to avoid overfitting
             loss="categorical_crossentropy",
             metrics=["accuracy"]
-        )
+        )#编译model
 
 
     @staticmethod
