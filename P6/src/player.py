@@ -1,7 +1,7 @@
 from config import BOARD_SIZE, categories, image_size
 from tensorflow.python.keras import models
 import numpy as np
-
+import os
 import keras
 
 class TicTacToePlayer:
@@ -46,7 +46,7 @@ class UserWebcamPlayer:
         import cv2
         cv2.namedWindow("preview")
         vc = cv2.VideoCapture(0)
-        vc.open()
+        #vc.open()
         if vc.isOpened(): # try to get the first frame
             rval, frame = vc.read()
             frame = self._process_frame(frame)
@@ -143,38 +143,56 @@ class UserWebcamPlayer:
 
         # return an integer (0, 1 or 2), otherwise the code will throw an error
         # Handle case where no image is captured
+        # 🔹 Handle case where no image is captured
         if img is None:
             print("[ERROR] No image captured from webcam.")
-            return 0  # Default to 'Neutral' (or any reasonable default)
+            return 0  # Default to 'Neutral'
 
-        # Show the captured image (for debugging)
+        # 🔹 Show the captured image (for debugging)
         plt.imshow(img, cmap='gray', vmin=0, vmax=255)
         plt.title("Captured Image (Preprocessing)")
         plt.show()
 
-        # Resize the image to match the model input size
+        # 🔹 Resize the image to match the model input size
         resized_img = cv2.resize(img, image_size)  # image_size should be (150, 150)
         resized_img = np.expand_dims(resized_img, axis=-1)  # Add channel dimension
         resized_img = np.expand_dims(resized_img, axis=0)   # Add batch dimension
         
-        # Normalize pixel values (scale from 0-255 to 0-1)
+        # 🔹 Normalize pixel values (scale from 0-255 to 0-1)
         resized_img = resized_img / 255.0
 
-        # Load the trained model
-        model_path = "results/basic_model_1_epochs_timestamp_1739825433.keras"  # Ensure this path is correct
-        model = load_model(model_path)
+        # 🔹 Dynamically find the latest trained model
+        model_dir = "results/"
+        model_files = [f for f in os.listdir(model_dir) if f.endswith(".keras") and "basic_model" in f]
+        
+        if not model_files:
+            print("[ERROR] No saved model found in results/. Ensure you trained and saved the model.")
+            return 0  # Default to Neutral
 
-        # Make a prediction
-        predictions = model.predict(resized_img)
+        latest_model = os.path.join(model_dir, sorted(model_files)[-1])  # Get the newest model
 
-        # Get the class with the highest probability
-        emotion_index = np.argmax(predictions)  # Returns 0, 1, or 2
+        print(f"Loading model: {latest_model}")  # Debugging info
 
-        # Print Debugging Information
-        print(f"Predicted Probabilities: {predictions}")
-        print(f"Predicted Emotion Index: {emotion_index}")
+        # 🔹 Load the trained model
+        model = models.load_model(latest_model)
 
-        return int(emotion_index)
+         # 🔹 Ensure model is compiled before predicting
+        model.compile()  # Some models require compilation before inference
+
+        # 🔹 Debugging: Check Model Input Shape
+        print(f"Model Input Shape: {model.input_shape}")
+        print(f"Resized Image Shape: {resized_img.shape}")
+
+        # 🔹 Make a prediction
+        try:
+            predictions = model.predict(resized_img)
+            print(f"Predicted Probabilities: {predictions}")
+            emotion_index = np.argmax(predictions)  # Returns 0, 1, or 2
+            print(f"Predicted Emotion Index: {emotion_index}")
+            return int(emotion_index)
+        except Exception as e:
+            print(f"[ERROR] Prediction failed: {e}")
+            return 0  # Default to Neutral if prediction fails
     
     def get_move(self, board_state):
         row, col = None, None
