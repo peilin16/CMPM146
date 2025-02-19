@@ -143,52 +143,47 @@ class UserWebcamPlayer:
 
         # return an integer (0, 1 or 2), otherwise the code will throw an error
         # Handle case where no image is captured
-        # 🔹 Handle case where no image is captured
         if img is None:
             print("[ERROR] No image captured from webcam.")
             return 0  # Default to 'Neutral'
 
-        # 🔹 Show the captured image (for debugging)
         plt.imshow(img, cmap='gray', vmin=0, vmax=255)
         plt.title("Captured Image (Preprocessing)")
         plt.show()
 
-        # 🔹 Resize the image to match the model input size
-        resized_img = cv2.resize(img, image_size)  # image_size should be (150, 150)
-        resized_img = np.expand_dims(resized_img, axis=-1)  # Add channel dimension
-        resized_img = np.expand_dims(resized_img, axis=0)   # Add batch dimension
-        
-        # 🔹 Normalize pixel values (scale from 0-255 to 0-1)
-        resized_img = resized_img / 255.0
+        resized_img = cv2.resize(img, image_size)  # image_size should be (150, 150) 把图片的大小设置为150*150
 
-        # 🔹 Dynamically find the latest trained model
-        model_dir = "results/"
-        model_files = [f for f in os.listdir(model_dir) if f.endswith(".keras") and "basic_model" in f]
+        resized_img = cv2.cvtColor(resized_img, cv2.COLOR_GRAY2RGB)   
+
+        resized_img = np.expand_dims(resized_img, axis=0)  # Add batch dimension
+
+         
+        resized_img = resized_img / 255.0 #计算需要的像素
+
         
+        model_dir = "src\\results\\"
+        model_files = [f for f in os.listdir(model_dir) if f.endswith(".keras")]  
+    
         if not model_files:
             print("[ERROR] No saved model found in results/. Ensure you trained and saved the model.")
             return 0  # Default to Neutral
 
-        latest_model = os.path.join(model_dir, sorted(model_files)[-1])  # Get the newest model
+        latest_model = os.path.join(model_dir, sorted(model_files)[-1])  # 得到最新的模型
 
         print(f"Loading model: {latest_model}")  # Debugging info
-
-        # 🔹 Load the trained model
+ 
         model = models.load_model(latest_model)
-
-         # 🔹 Ensure model is compiled before predicting
+ 
         model.compile()  # Some models require compilation before inference
-
-        # 🔹 Debugging: Check Model Input Shape
+ 
         print(f"Model Input Shape: {model.input_shape}")
         print(f"Resized Image Shape: {resized_img.shape}")
 
-        # 🔹 Make a prediction
         try:
             predictions = model.predict(resized_img)
             print(f"Predicted Probabilities: {predictions}")
-            emotion_index = np.argmax(predictions)  # Returns 0, 1, or 2
-            print(f"Predicted Emotion Index: {emotion_index}")
+            emotion_index = np.argmax(predictions)  # Returns 0, 1, or 2 得到下标
+            print(f"Predicted Emotion Index: {emotion_index}")# 预测表情
             return int(emotion_index)
         except Exception as e:
             print(f"[ERROR] Prediction failed: {e}")

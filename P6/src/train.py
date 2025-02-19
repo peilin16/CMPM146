@@ -1,6 +1,9 @@
 import numpy as np
 from preprocess import get_datasets
 from models.basic_model import BasicModel
+from models.random_model import RandomModel
+from models.transfered_model import TransferedModel
+
 from models.model import Model
 from config import image_size
 import matplotlib.pyplot as plt
@@ -11,6 +14,8 @@ categories_count = 3
 
 models = {
     'basic_model': BasicModel,
+    'transfered_model': TransferedModel,
+    'random_model': RandomModel,
 }
 
 def plot_history(history):
@@ -45,7 +50,7 @@ if __name__ == "__main__":
     # plot_history(history)
     # 
     # Your code should change the number of epochs
-    epochs = 1
+    epochs = 6
     print('* Data preprocessing')
     train_dataset, validation_dataset, test_dataset = get_datasets()
     name = 'basic_model'
@@ -60,7 +65,9 @@ if __name__ == "__main__":
     print(model.get_confusion_matrix(test_dataset))
     model_name = '{}_{}_epochs_timestamp_{}'.format(name, epochs, int(time.time()))
     filename = 'results/{}.keras'.format(model_name)
-    model.save_model(filename)
+    #model.save_model(filename)
     np.save('results/{}.npy'.format(model_name), history.history)
     print('* Model saved as {}'.format(filename))
     plot_history(history)
+    model.save_model(filename, save_format="keras")
+
