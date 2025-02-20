@@ -15,24 +15,17 @@ class BasicModel(Model):
         #通过 增加layers的方式提高准确度
         self.model = Sequential([
             layers.Conv2D(32, (3,3), activation='relu', input_shape=input_shape),
-            BatchNormalization(),
             layers.MaxPooling2D(2,2),
 
             layers.Conv2D(64, (3,3), activation='relu'),
-            BatchNormalization(),
             layers.MaxPooling2D(2,2),
 
             layers.Conv2D(128, (3,3), activation='relu'),
-            BatchNormalization(),
-            layers.MaxPooling2D(2,2),
-
-            layers.Conv2D(256, (3,3), activation='relu'),  # New Layer
-            BatchNormalization(),
             layers.MaxPooling2D(2,2),
 
             layers.Flatten(),
-            layers.Dense(256, activation='relu'),  # Increased neurons
-            Dropout(0.5),
+            layers.Dense(128, activation='relu'),
+            layers.Dropout(0.5),  # Helps prevent overfitting
             layers.Dense(categories_count, activation='softmax')  # Multi-class classification
         ])
  
