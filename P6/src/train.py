@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # plot_history(history)
     # 
     # Your code should change the number of epochs
-    epochs = 6
+    epochs = 3
     print('* Data preprocessing')
     train_dataset, validation_dataset, test_dataset = get_datasets()
     name = 'basic_model'
@@ -66,8 +66,10 @@ if __name__ == "__main__":
     model_name = '{}_{}_epochs_timestamp_{}'.format(name, epochs, int(time.time()))
     filename = 'results/{}.keras'.format(model_name)
     #model.save_model(filename)
+    plot_history(history)
+    model.save_model(filename)
     np.save('results/{}.npy'.format(model_name), history.history)
     print('* Model saved as {}'.format(filename))
-    plot_history(history)
-    model.save_model(filename, save_format="keras")
+    
+    
 
