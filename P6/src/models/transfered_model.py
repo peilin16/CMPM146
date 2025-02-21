@@ -39,7 +39,7 @@ class TransferedModel(Model):
         # Your code goes here
         # you have to compile the keras model, similar to the example in the writeup
         self.model.compile(
-            optimizer=adam_v2.Adam(learning_rate=0.0005),  # Lower LR to avoid overfitting
+            optimizer=adam_v2.Adam(learning_rate=0.0005),  # Lower LR  避免过拟合
             loss="categorical_crossentropy",
             metrics=["accuracy"]
         )

@@ -31,7 +31,6 @@ class RandomModel(Model):
  
         new_layers = Sequential([
             layers.Dense(128, activation='relu'),
-            layers.Dropout(0.5),
             layers.Dense(categories_count, activation='softmax')  # Output layer for new task
         ])
  
